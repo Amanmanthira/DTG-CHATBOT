@@ -173,9 +173,22 @@
         
         // Gemini API Configuration
         const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
-        // NOTE: Leave the API key empty. The environment will handle authentication.
+        
+        // NOTE: The 'apiKey' below is automatically injected by the Canvas environment.
         const apiKey = ""; 
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+
+        // STEP 1: PLACE YOUR GEMINI API KEY HERE for external deployment (Netlify, Vercel, etc.)
+        // When deployed outside of Canvas, the environment key (apiKey) will be empty, and this key will be used.
+        const GEMINI_API_KEY_FOR_NETLIFY = "AIzaSyB20k4HqXj1KMg2spE7UYZinarWkfQ0FNU"; 
+
+        let finalApiKey = apiKey;
+        
+        // If the Canvas environment key is not present, use the user's hardcoded key.
+        if (finalApiKey === "") {
+            finalApiKey = GEMINI_API_KEY_FOR_NETLIFY;
+        }
+
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${finalApiKey}`;
 
         // Chat state and UI elements
         const messagesContainer = document.getElementById('messages-container');
@@ -326,6 +339,13 @@
             const userText = userInput.value.trim();
             if (!userText || isProcessing) return;
 
+            // Critical check for API key before sending
+            if (finalApiKey === "YOUR_GEMINI_API_KEY_HERE" || finalApiKey === "") {
+                showModal('API Key Missing', 'To run this app on Netlify, you MUST insert your Gemini API key in the script block. It is currently using the placeholder key.');
+                updateUIState(false);
+                return;
+            }
+
             // 1. Update UI and append user message
             updateUIState(true);
             userInput.value = '';
@@ -379,8 +399,8 @@
             } catch (error) {
                 console.error("Gemini API Error:", error);
                 // 5. Append error message to UI
-                appendMessage("I apologize, I encountered an issue connecting to my knowledge base. Please try again or contact us directly at (555) 123-4567.", 'ai');
-                showModal('Connection Error', 'The AI service failed to respond. Please check the console for details.');
+                appendMessage("I apologize, I encountered an issue connecting to my knowledge base. Please try again or contact us directly.", 'ai');
+                showModal('Connection Error', `The AI service failed to respond. Please check your API key setup.`);
                 
                 // Remove the last user entry from history so we don't send a failed turn on the next request
                 if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
