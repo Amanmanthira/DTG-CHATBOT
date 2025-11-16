@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigiTech AI - Modern Animated Chatbot</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Font Import (Inter is highly recommended for modern UIs) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Very light, cool background */
+        }
+
+        /* --- Custom Animations --- */
+
+        /* Animation for new messages */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animation for the widget when it loads */
+        @keyframes widgetEntry {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        .widget-entry {
+            animation: widgetEntry 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth cubic bezier easing */
+        }
+
+        /* Subtle pulse for the logo */
+        @keyframes pulse-slow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(0, 188, 212, 0); } /* Cyan pulse */
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 4s infinite ease-in-out;
+        }
+
+        /* Styling for the messages container to enable scrolling */
+        #messages-container {
+            max-height: calc(100vh - 200px); 
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar for a cleaner look */
+        #messages-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #messages-container::-webkit-scrollbar-thumb {
+            background-color: #94a3b8; /* Slate-400 */
+            border-radius: 10px;
+        }
+        #messages-container::-webkit-scrollbar-track {
+            background: #e2e8f0; /* Gray-200 */
+        }
+
+        /* Message bubble styling */
+        .message-bubble {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            /* Enhanced shadow for depth */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); 
+        }
+        
+        /* User message style */
+        .user-message {
+            background-color: #2563eb; /* Deeper Blue-600 */
+            color: white;
+            border-bottom-right-radius: 4px; /* Slight asymmetry */
+        }
+
+        /* AI message style */
+        .ai-message {
+            background-color: #ffffff; /* White */
+            color: #1f2937; 
+            border: 1px solid #cbd5e1; /* Subtle border */
+            border-bottom-left-radius: 4px; /* Slight asymmetry */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Chat Interface Container - Added widget-entry class -->
+    <div id="chat-widget" class="bg-white rounded-xl shadow-2xl w-full max-w-xl md:max-w-3xl flex flex-col widget-entry">
+        
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-700 to-cyan-500 p-5 rounded-t-xl text-white shadow-xl flex items-center justify-between">
+            <div class="flex items-center">
+                <!-- DigiTech AI Logo (Placeholder for modern, high-contrast image) -->
+                <div class="relative mr-3">
+                    <img src="https://placehold.co/40x40/00bcd4/ffffff?text=DT" 
+                         onerror="this.onerror=null;this.src='https://placehold.co/40x40/3b82f6/ffffff?text=AI';"
+                         alt="DigiTech AI Logo" 
+                         class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-lg animate-pulse-slow"
+                    />
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight">DigiTech AI</h1>
+                    <p class="text-sm opacity-90">Online Assistant for Digitech Technologies</p>
+                </div>
+            </div>
+            <!-- Status Indicator -->
+            <div class="text-xs bg-green-500 text-white px-3 py-1 rounded-full font-medium shadow-md">
+                Online
+            </div>
+        </header>
+
+        <!-- Messages Container -->
+        <div id="messages-container" class="flex-grow p-4 md:p-6 bg-gray-50">
+            <!-- Initial welcome message from the AI -->
+            <div class="flex justify-start">
+                <div class="message-bubble ai-message text-sm animate-fadeIn">
+                    Hello! I'm DigiTech AI, your assistant from Digitech Technologies. I specialize in TV repair and service inquiries. How can I help you with your TV issue today?
+                </div>
+            </div>
+            <!-- Messages will be injected here with fade-in animation -->
+        </div>
+
+        <!-- Input Area -->
+        <footer class="p-4 md:p-6 border-t border-gray-200 bg-white rounded-b-xl">
+            <div class="flex space-x-3">
+                <input type="text" id="user-input" placeholder="Type your TV issue or question..." 
+                       class="flex-grow p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all duration-150 shadow-inner disabled:bg-gray-100 disabled:cursor-not-allowed">
+                
+                <button id="send-button" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] disabled:bg-gray-400 disabled:shadow-none disabled:cursor-not-allowed">
+                    Send
+                </button>
+            </div>
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="mt-2 text-sm text-blue-600 hidden flex items-center">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                DigiTech AI is typing...
+            </div>
+        </footer>
+    </div>
+
+    <!-- Error/Status Modal -->
+    <div id="status-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full transform transition-transform scale-100">
+            <h3 class="text-2xl font-bold mb-4 text-red-600" id="modal-title">Error</h3>
+            <p id="modal-message" class="text-gray-700">An unexpected error occurred.</p>
+            <button onclick="document.getElementById('status-modal').classList.add('hidden')" 
+                    class="mt-6 w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-lg transition duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                Acknowledge
+            </button>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Global variables for Firebase setup
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // Gemini API Configuration
+        const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+        // NOTE: Leave the API key empty. The environment will handle authentication.
+        const apiKey = ""; 
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+
+        // Chat state and UI elements
+        const messagesContainer = document.getElementById('messages-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        
+        let chatHistory = [];
+        let isProcessing = false;
+
+        // --- Firebase Setup (Mandatory Boilerplate) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let db, auth;
+        let userId = 'anon_user'; // Default placeholder
+
+        // Function to initialize Firebase and authenticate
+        async function initializeFirebase() {
+            setLogLevel('debug');
+            if (firebaseConfig) {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Firebase signed in with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Firebase signed in anonymously.");
+                    }
+                    userId = auth.currentUser?.uid || crypto.randomUUID();
+                    console.log("Current User ID:", userId);
+
+                } catch (error) {
+                    console.error("Firebase authentication error:", error);
+                    showModal('Authentication Failed', 'Could not authenticate with Firebase. Chat functionality may be limited.');
+                }
+            } else {
+                console.warn("Firebase config not found. Running without persistence features.");
+            }
+        }
+
+        // --- UI Functions ---
+
+        /**
+         * Appends a message bubble to the container.
+         * @param {string} text - The message content.
+         * @param {string} sender - 'user' or 'ai'.
+         */
+        function appendMessage(text, sender) {
+            const messageWrapper = document.createElement('div');
+            const messageBubble = document.createElement('div');
+
+            messageBubble.classList.add('message-bubble', 'text-sm');
+            messageBubble.innerHTML = text.replace(/\n/g, '<br>'); // Handle markdown newlines
+            
+            if (sender === 'user') {
+                messageWrapper.classList.add('flex', 'justify-end');
+                messageBubble.classList.add('user-message');
+            } else {
+                messageWrapper.classList.add('flex', 'justify-start');
+                messageBubble.classList.add('ai-message');
+            }
+
+            messageWrapper.appendChild(messageBubble);
+            messagesContainer.appendChild(messageWrapper);
+            
+            // 1. Add fade-in animation class for the modern/animated requirement
+            messageWrapper.classList.add('animate-fadeIn');
+            
+            // 2. Scroll to the bottom of the messages
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        /**
+         * Updates the UI state (input, button, loading indicator).
+         * @param {boolean} loading - True if loading, false otherwise.
+         */
+        function updateUIState(loading) {
+            isProcessing = loading;
+            userInput.disabled = loading;
+            // The send button is disabled if loading OR if the input is empty
+            sendButton.disabled = loading || userInput.value.trim() === ''; 
+            loadingIndicator.classList.toggle('hidden', !loading);
+        }
+
+        /**
+         * Displays a custom modal for errors or status messages.
+         * @param {string} title - Title of the modal.
+         * @param {string} message - Content of the modal.
+         */
+        function showModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('status-modal').classList.remove('hidden');
+            document.getElementById('status-modal').classList.add('flex');
+        }
+        
+        // Event listener for input field to enable/disable button
+        userInput.addEventListener('input', () => {
+            sendButton.disabled = isProcessing || userInput.value.trim() === '';
+        });
+
+        // --- API & Chat Logic ---
+
+        /**
+         * Executes the request to the Gemini API with exponential backoff.
+         * @param {object} payload - The API request payload.
+         * @param {number} retries - Current retry count.
+         */
+        async function fetchWithBackoff(payload, retries = 0) {
+            const MAX_RETRIES = 5;
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 429 && retries < MAX_RETRIES) {
+                    const delay = Math.pow(2, retries) * 1000;
+                    // console.warn(`Rate limit exceeded. Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithBackoff(payload, retries + 1);
+                }
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    throw new Error(`API Request failed: ${response.statusText} - ${errorBody.error?.message || 'Unknown Error'}`);
+                }
+
+                return response.json();
+
+            } catch (error) {
+                console.error("Fetch failed after all retries:", error);
+                throw error;
+            }
+        }
+
+        /**
+         * Sends the user message to the Gemini API and updates the chat.
+         */
+        async function sendMessage() {
+            const userText = userInput.value.trim();
+            if (!userText || isProcessing) return;
+
+            // 1. Update UI and append user message
+            updateUIState(true);
+            userInput.value = '';
+            appendMessage(userText, 'user');
+            
+            // 2. Add user message to history
+            chatHistory.push({ role: "user", parts: [{ text: userText }] });
+
+            // --- UPDATED SYSTEM PROMPT WITH BUSINESS DETAILS ---
+            const systemPrompt = `You are DigiTech AI, a helpful, polite, and highly knowledgeable customer support assistant for DigiTech Technologies, a leading TV repair center.
+            
+            BUSINESS DETAILS:
+            - **Owner:** Mr. Chandana Pushpakumara
+            - **Experience:** 30+ years in TV repair.
+            - **Services:** All types of TV repairs, including CRT, LED, and LCD.
+            - **Address:** No 84, Thammita, Makevita
+            - **Contact:** 0724319282
+            - **Email:** amanmanthiraamex@gmail.com
+            
+            Your role is to address customer inquiries, provide initial troubleshooting steps for common TV issues, and provide accurate information about services, contact methods, and location based ONLY on the details provided above. Keep responses concise and focused on TV repair and services offered by DigiTech Technologies.`;
+            // --------------------------------------------------
+
+            const payload = {
+                contents: chatHistory,
+                // Enable Google Search grounding for up-to-date and contextual information
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            try {
+                const result = await fetchWithBackoff(payload);
+                const candidate = result.candidates?.[0];
+
+                let aiResponseText = "Sorry, I ran into an issue finding a response.";
+                
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    aiResponseText = candidate.content.parts[0].text;
+                    
+                    // 3. Add AI response to history
+                    chatHistory.push({ 
+                        role: "model", 
+                        parts: [{ text: aiResponseText }] 
+                    });
+                }
+                
+                // 4. Append AI message to UI
+                appendMessage(aiResponseText, 'ai');
+
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                // 5. Append error message to UI
+                appendMessage("I apologize, I encountered an issue connecting to my knowledge base. Please try again or contact us directly at (555) 123-4567.", 'ai');
+                showModal('Connection Error', 'The AI service failed to respond. Please check the console for details.');
+                
+                // Remove the last user entry from history so we don't send a failed turn on the next request
+                if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
+                    chatHistory.pop();
+                }
+
+            } finally {
+                updateUIState(false);
+            }
+        }
+
+        // --- Event Listener Setup ---
+        
+        // Attach click listener to the send button
+        sendButton.addEventListener('click', sendMessage);
+
+        // Attach keypress listener to the input field for the Enter key
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && !isProcessing && userInput.value.trim() !== '') {
+                sendMessage();
+            }
+        });
+
+        // Initialize Firebase on window load
+        window.onload = initializeFirebase;
+    </script>
+
+</body>
+</html>
